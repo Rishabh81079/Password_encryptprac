@@ -18,8 +18,17 @@ const schema = new Schema({
         type:String,
         enum:["jaipur","delhi","alwar"],
         lowercase:true
+    },
+    email:{
+        type:String,
+        unique:true,
+        required:true
+    },
+    password:{
+        type:String,
+        
     }
-})
+},{timestamps:true})
 
 const collection = mongoose.model('user',schema)
 

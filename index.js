@@ -4,6 +4,7 @@ const app = express()
 
 const main = require("./database")
 const collection = require("./Models/users")
+const validateuser = require('./utils/validateuser')
 
 app.use(express.json())
 
@@ -18,6 +19,7 @@ app.post('/info', async (req,res)=>{
 
     try{
    
+        validateuser(req.body)
         
     await collection.create(req.body)
     res.send("created")
