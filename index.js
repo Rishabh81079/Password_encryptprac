@@ -6,11 +6,18 @@ const main = require("./database")
 const collection = require("./Models/users")
 const validateuser = require('./utils/validateuser')
 
-app.use(express.json())
+const cookieParser = require('cookie-parser')
+const jwt = require('jsonwebtoken');
 
+app.use(express.json())
+app.use(cookieParser())
 
 app.get('/info',async (req,res)=>{
     const ans = await collection.find()
+    const payload = jwt.verify(req.cookies.token, process.env.Secret) 
+    console.log(payload);
+    console.log(req.cookies);
+    
     res.send(ans)
 })
 
@@ -20,7 +27,7 @@ app.post('/info', async (req,res)=>{
     try{
    
         validateuser(req.body)
-        
+        req.body.password = await bcrypt.hash(req.body.password,10)
     await collection.create(req.body)
     res.send("created")
     }
@@ -62,16 +69,35 @@ app.patch('/info',async (req,res)=>{
 })
 
 
-const pass = "rishabh10"
+// const pass = "rishabh10"
 
-async function hashing(){
-const salting = await bcrypt.genSalt(10)
-const ans = await bcrypt.hash(pass,salting)
-const comp = await bcrypt.compare(pass, ans)
-console.log(comp);
-}
+// async function hashing(){
+// const salting = await bcrypt.genSalt(10)
+// const ans = await bcrypt.hash(pass,salting)
+// const comp = await bcrypt.compare(pass, ans)
+// console.log(comp);
+// }
 
-hashing()
+// hashing()
+
+
+
+app.post('/login',async (req,res)=>{
+    const ans = await collection.findById(req.body._id)
+    if(!(req.body.email===ans.email))
+        throw new Error("wrong credentials")
+
+    // const isAllowed = await bcrypt.compare(req.body.password, ans.password)
+        const isAllowed = ans.verify(req.body.password)
+
+
+    if(!isAllowed)
+        throw new Error("wrong credentials")
+        const token = jwt.sign({ _id: ans._id }, process.env.Secret,{expiresIn:100});
+    res.cookie("token",token)
+    res.send("Successfully login")
+})
+
 
 main()
 .then(async ()=>{

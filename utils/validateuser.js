@@ -14,7 +14,7 @@ function validateuser(data){
 
 
     const mandatoryfields = ["email","password"]
-    const isAllowed = mandatoryfields.every((k)=>data.includes(k))
+    const isAllowed = mandatoryfields.every((k)=>Object.keys(data).includes(k))
     if(!isAllowed)
         throw new Error("field is missing")
 }
