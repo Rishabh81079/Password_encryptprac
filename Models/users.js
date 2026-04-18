@@ -30,7 +30,7 @@ const schema = new Schema({
 },{timestamps:true})
 
 
-schema.methods.verify = async function(pass){
+schema.methods.verifypassword = async function(pass){
 
     const result = await bcrypt.compare(pass, this.password)
     return result

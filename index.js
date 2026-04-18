@@ -8,21 +8,34 @@ const validateuser = require('./utils/validateuser')
 
 const cookieParser = require('cookie-parser')
 const jwt = require('jsonwebtoken');
+const redisClient = require('./config/redis')
+const middlewareAuth = require('./Middleware/auth')
+
+
+const router = require('./utils/loginlogout')
+
+
+require('dotenv').config()
 
 app.use(express.json())
 app.use(cookieParser())
 
-app.get('/info',async (req,res)=>{
-    const ans = await collection.find()
-    const payload = jwt.verify(req.cookies.token, process.env.Secret) 
-    console.log(payload);
-    console.log(req.cookies);
-    
-    res.send(ans)
+app.use('/admin', router)
+
+app.get('/info', middlewareAuth, async (req, res) => {
+    try {
+       
+
+        const ans = await collection.find()
+        res.send(ans)
+
+    } catch (err) {
+        res.status(401).send(err.message)
+    }
 })
 
 
-app.post('/info', async (req,res)=>{
+app.post('/info', middlewareAuth, async (req,res)=>{
 
     try{
    
@@ -37,19 +50,19 @@ app.post('/info', async (req,res)=>{
 })
 
 
-app.delete('/info',async (req,res)=>{
+app.delete('/info', middlewareAuth, async (req,res)=>{
     await collection.deleteOne({name:"r"})
     res.send("deleted")
 })
 
 
-app.put('/info',async (req,res)=>{
+app.put('/info', middlewareAuth, async (req,res)=>{
     await collection.updateOne({name:"r"},{age:50})
     res.send("updated")
 })
 
 
-app.get('/info/:id',async (req,res)=>{
+app.get('/info/:id', middlewareAuth, async (req,res)=>{
     try{
         const ans = await collection.findById(req.params.id)
         res.send(ans)
@@ -61,7 +74,7 @@ app.get('/info/:id',async (req,res)=>{
 })
 
 
-app.patch('/info',async (req,res)=>{
+app.patch('/info', middlewareAuth, async (req,res)=>{
 
     const {_id, ...update} = req.body
     await collection.findByIdAndUpdate(_id, update)
@@ -82,28 +95,34 @@ app.patch('/info',async (req,res)=>{
 
 
 
-app.post('/login',async (req,res)=>{
-    const ans = await collection.findById(req.body._id)
-    if(!(req.body.email===ans.email))
-        throw new Error("wrong credentials")
-
-    // const isAllowed = await bcrypt.compare(req.body.password, ans.password)
-        const isAllowed = ans.verify(req.body.password)
 
 
-    if(!isAllowed)
-        throw new Error("wrong credentials")
-        const token = jwt.sign({ _id: ans._id }, process.env.Secret,{expiresIn:100});
-    res.cookie("token",token)
-    res.send("Successfully login")
-})
+const initializeConnect = async ()=>{
 
-
-main()
-.then(async ()=>{
-    console.log("connected DB")
+    try{
+        //await redisClient.connect()
+        //await main()
+        await Promise.all([redisClient.connect(),main()])
+        console.log("connected DB")
     app.listen(1234,()=>{
     console.log("connected Backend")
-})
-})
-.catch((err)=>console.log(err))
+    })
+    }
+    catch(err){
+        console.log(err.message);
+        
+    }
+}
+
+initializeConnect()
+ 
+
+// main()
+// .then(async ()=>{
+//     await redisClient.connect()
+//     console.log("connected DB")
+//     app.listen(1234,()=>{
+//     console.log("connected Backend")
+// })
+// })
+// .catch((err)=>console.log(err))
